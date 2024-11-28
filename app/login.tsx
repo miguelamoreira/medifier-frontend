@@ -12,9 +12,9 @@ export default function Login() {
 
   const handleLogin = async () => {
     try {      
-      const response = await login({ email, password });
+      const response = await login({ email, password }); // chama a API cliente
       console.log(response);
-      Alert.alert('Success', 'You are logged in!');
+      //Alert.alert('Success', 'You are logged in!');
       router.push('/dashboard');
     } catch (error) {
       console.log(error);

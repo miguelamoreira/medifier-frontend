@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView } fr
 import { Ionicons } from '@expo/vector-icons';
 import TabBar from '../components/TabBar';
 
+
 export default function Dashboard() {
   const [selectedDay, setSelectedDay] = useState(4);
 

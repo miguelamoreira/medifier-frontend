@@ -1,8 +1,10 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:3000/medifier',
-  timeout: 5000,
+  // é suposto substituir o 172.28.2.59 pelo IP dos vossos computadores
+  // o 'localhost' é para que funcione apenas no pc local
+  baseURL: 'http://172.28.2.59:3000/medifier',
+  timeout: 10000,
 });
 
 export default apiClient;
