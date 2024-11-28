@@ -1,17 +1,50 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import CheckBox from 'expo-checkbox';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { createUser } from '../api/userApi';
+
+interface RegisterFormData {
+  username: string;
+  email: string;
+  password: string;
+}
 
 export default function Register() {
+  const [formData, setFormData] = useState<RegisterFormData>({
+    username: '',
+    email: '',
+    password: '',
+  });
   const [isChecked, setChecked] = useState(false);
   const router = useRouter();
+
+  const handleChange = (field: keyof RegisterFormData, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSubmit = async () => {
+    if (!isChecked) {
+      Alert.alert('Please agree to the terms and conditions');
+      return;
+    }
+
+    try {
+      const response = await createUser(formData);
+      router.push('/login');
+    } catch (error) {
+      Alert.alert('Registration Failed', 'Something went wrong!');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Create Account</Text>
-      <Text style={styles.subtitle}>Fill your information below or register with your social account.</Text>
+      <Text style={styles.subtitle}>Fill in your details below or register with your social account.</Text>
 
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Name</Text>
@@ -19,6 +52,8 @@ export default function Register() {
           style={styles.input}
           placeholder="Enter your name"
           placeholderTextColor="#C4C4C4"
+          value={formData.username}
+          onChangeText={(text) => handleChange('username', text)}
         />
       </View>
 
@@ -30,6 +65,8 @@ export default function Register() {
           placeholderTextColor="#C4C4C4"
           keyboardType="email-address"
           autoCapitalize="none"
+          value={formData.email}
+          onChangeText={(text) => handleChange('email', text)}
         />
       </View>
 
@@ -40,6 +77,8 @@ export default function Register() {
           placeholder="************"
           placeholderTextColor="#C4C4C4"
           secureTextEntry={true}
+          value={formData.password}
+          onChangeText={(text) => handleChange('password', text)}
         />
       </View>
 
@@ -54,8 +93,8 @@ export default function Register() {
         </Text>
       </View>
 
-      <TouchableOpacity style={styles.signUpButton}>
-        <Text style={styles.signUpButtonText} onPress={() => router.push('/dashboard')}>Sign Up</Text>
+      <TouchableOpacity style={styles.signUpButton} onPress={handleSubmit}>
+        <Text style={styles.signUpButtonText}>Sign Up</Text>
       </TouchableOpacity>
 
       <Text style={styles.orText}>──────── Or sign up with ────────</Text>

@@ -1,15 +1,32 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { login } from '../api/userApi';
 
 export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const router = useRouter();
+
+
+  const handleLogin = async () => {
+    try {      
+      const response = await login({ email, password });
+      console.log(response);
+      Alert.alert('Success', 'You are logged in!');
+      router.push('/dashboard');
+    } catch (error) {
+      console.log(error);
+      Alert.alert('Login Failed', 'An error occurred, please try again.');
+    }
+  };
+
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Log In</Text>
-      <Text style={styles.subtitle}>Hi! welcome back, you've been missed</Text>
+      <Text style={styles.subtitle}>Hi! Welcome back, you've been missed</Text>
 
       <View style={styles.inputContainer}>
         <Text style={styles.label}>Email</Text>
@@ -19,6 +36,8 @@ export default function Login() {
           placeholderTextColor="#C4C4C4"
           keyboardType="email-address"
           autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
         />
       </View>
 
@@ -29,13 +48,15 @@ export default function Login() {
           placeholder="************"
           placeholderTextColor="#C4C4C4"
           secureTextEntry={true}
+          value={password}
+          onChangeText={setPassword}
         />
         <TouchableOpacity>
           <Text style={styles.forgotPassword}>Forgot Password?</Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.signInButton} onPress={() => router.push('/dashboard')}>
+      <TouchableOpacity style={styles.signInButton} onPress={handleLogin}>
         <Text style={styles.signInButtonText}>Sign In</Text>
       </TouchableOpacity>
 
