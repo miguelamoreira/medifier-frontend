@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { login } from '../api/userApi';
-
+import { UserContext } from '@/contexts/UserContext';
 export default function Login() {
+  const { setUser } = useContext(UserContext)!
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
@@ -12,9 +14,11 @@ export default function Login() {
 
   const handleLogin = async () => {
     try {      
-      const response = await login({ email, password }); // chama a API cliente
-      console.log(response);
+      const response = await login({ email, password });
+      console.log('response:',response);
       //Alert.alert('Success', 'You are logged in!');
+
+      setUser(response.user);
       router.push('/dashboard');
     } catch (error) {
       console.log(error);

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TabBar from '../components/TabBar';
-
-
+import { UserContext } from '@/contexts/UserContext';
 export default function Dashboard() {
+  const {user} = useContext(UserContext)!
   const [selectedDay, setSelectedDay] = useState(4);
 
   const medicationData = {
@@ -40,7 +40,7 @@ export default function Dashboard() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hello, Sara 👋</Text>
+        <Text style={styles.greeting}>Hello, {user?.username} 👋</Text>
         <View style={styles.headerIcons}>
           <Ionicons name="notifications-outline" size={24} color="#333" style={styles.icon} />
           <View style={styles.profilePicture}></View>

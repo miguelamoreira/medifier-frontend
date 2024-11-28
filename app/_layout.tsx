@@ -6,7 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-
+import { UserProvider } from '../contexts/UserContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 SplashScreen.preventAutoHideAsync();
@@ -34,20 +34,22 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack initialRouteName="onboarding">
-        {/* Screens */}
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ title: 'Login', headerShown: false }} />
-        <Stack.Screen name="register" options={{ title: 'Register', headerShown: false }} />
-        <Stack.Screen name="dashboard" options={{ title: 'Dashboard', headerShown: false }} />
-        <Stack.Screen name="profile" options={{ title: 'Profile', headerShown: false }} />
-        <Stack.Screen name="newPill" options={{ title: 'NewPill', headerShown: false }} />
-        <Stack.Screen name="userSettings" options={{ title: 'UserSettings', headerShown: false }} />
-        <Stack.Screen name="notificationsSettings" options={{ title: 'NotificationsSettings', headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-    </ThemeProvider>
+    <UserProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack initialRouteName="onboarding">
+          {/* Screens */}
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+          <Stack.Screen name="login" options={{ title: 'Login', headerShown: false }} />
+          <Stack.Screen name="register" options={{ title: 'Register', headerShown: false }} />
+          <Stack.Screen name="dashboard" options={{ title: 'Dashboard', headerShown: false }} />
+          <Stack.Screen name="profile" options={{ title: 'Profile', headerShown: false }} />
+          <Stack.Screen name="newPill" options={{ title: 'NewPill', headerShown: false }} />
+          <Stack.Screen name="userSettings" options={{ title: 'UserSettings', headerShown: false }} />
+          <Stack.Screen name="notificationsSettings" options={{ title: 'NotificationsSettings', headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      </ThemeProvider>
+    </UserProvider>
   );
 }
