@@ -15,6 +15,7 @@ export default function Login() {
   const handleLogin = async () => {
     try {      
       const response = await login({ email, password });
+      console.log('alo')
       console.log('response:',response);
       //Alert.alert('Success', 'You are logged in!');
 

@@ -5,8 +5,26 @@ import TabBar from '../components/TabBar';
 import { UserContext } from '@/contexts/UserContext';
 export default function Dashboard() {
   const {user} = useContext(UserContext)!
-  const [selectedDay, setSelectedDay] = useState(4);
+  
+  const date = new Date();
+  const today = date.getDay(); 
+  const [selectedDay, setSelectedDay] = useState(today === 0 ? 6 : today - 1);
+  
+  const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'long',
+  };
+  const startOfWeek = new Date(date.setDate(date.getDate() - date.getDay() + 1));
+  const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+  const weekDates = daysOfWeek.map((_, index) => {
+    const newDate = new Date(startOfWeek);
+    newDate.setDate(startOfWeek.getDate() + index); 
+    return newDate.getDate(); 
+  });
+
+
+  const formattedDate: string = date.toLocaleDateString(undefined, options);
   const medicationData = {
     0: [
       { time: '8:00 AM', name: 'Vitamin C', details: '500mg - with water', color: '#E8F0FE' },
@@ -47,17 +65,17 @@ export default function Dashboard() {
         </View>
       </View>
 
-      <Text style={styles.subtitle}>November 2024</Text>
+      <Text style={styles.subtitle}>{ formattedDate }</Text>
       <Text style={styles.title}>Today’s reminders</Text>
 
       <View style={styles.calendar}>
-        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
+        {daysOfWeek.map((day, index) => (
           <TouchableOpacity key={index} onPress={() => setSelectedDay(index)}>
             <View style={styles.calendarDay}>
               <Text
                 style={[
                   styles.calendarDayText,
-                  index === selectedDay && styles.selectedDayText, 
+                  index === selectedDay && styles.selectedDayText,
                 ]}
               >
                 {day}
@@ -65,7 +83,7 @@ export default function Dashboard() {
               <View
                 style={[
                   styles.calendarDateCircle,
-                  index === selectedDay && styles.selectedDateCircle, 
+                  index === selectedDay && styles.selectedDateCircle,
                 ]}
               >
                 <Text
@@ -74,7 +92,7 @@ export default function Dashboard() {
                     index === selectedDay && styles.selectedDateText,
                   ]}
                 >
-                  {4 + index}
+                  {weekDates[index]} {/* Display the corresponding day of the month */}
                 </Text>
               </View>
             </View>

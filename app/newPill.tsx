@@ -2,19 +2,22 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, Modal } from "react-native";
 import { useRouter } from 'expo-router';
 import { Picker } from "@react-native-picker/picker";
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function NewPill() {
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(true);
   const [times, setTimes] = useState([
-    { id: 1, time: '9:00 AM', capsules: '1 Capsule' },
-    { id: 2, time: '9:00 PM', capsules: '2 Capsules' },
+    { id: 1, time: new Date(0, 0, 0, 9, 0), capsules: 1 },
+    { id: 2, time: new Date(0, 0, 0, 21, 0), capsules: 2 },
   ]);
   const [frequencyModalVisible, setFrequencyModalVisible] = useState(false);
   const [frequency, setFrequency] = useState('Every Day');
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState(null);
 
   const addTimeSlot = () => {
-    const newTime = { id: Date.now(), time: '', capsules: '' };
+    const newTime = { id: Date.now(), time: new Date(), capsules: 1 };
     setTimes([...times, newTime]);
   };
 
@@ -26,20 +29,38 @@ export default function NewPill() {
     setTimes(times.map(item => (item.id === id ? { ...item, [key]: value } : item)));
   };
 
+  const handleTimeChange = (event, selectedTime) => {
+    if (selectedTime) {
+      const newTime = selectedTime;
+      updateTimeSlot(selectedTimeSlotId, 'time', newTime);
+    }
+    setShowTimePicker(false);
+  };
+
+  const handleDone = () => {
+    setModalVisible(false);
+    router.push('/dashboard');
+  };
+
+  const handleCancel = () => {
+    setModalVisible(false);
+    router.push('/dashboard');
+  };
+
   const handleFrequencyChange = (newFrequency) => {
     setFrequency(newFrequency);
     setFrequencyModalVisible(false);
   };
 
   return (
-    <Modal visible={modalVisible} animationType="slide" transparent>
+    <Modal visible={modalVisible} animationType="slide" transparent={true}>
       <View style={styles.modalContainer}>
         <View style={styles.modalHeader}>
-          <TouchableOpacity onPress={() => router.push('/dashboard')}>
+          <TouchableOpacity onPress={handleCancel}>
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
           <Text style={styles.headerText}>Pill Form</Text>
-          <TouchableOpacity onPress={() => router.push('/dashboard')}>
+          <TouchableOpacity onPress={handleDone}>
             <Text style={styles.doneText}>Done</Text>
           </TouchableOpacity>
         </View>
@@ -64,20 +85,28 @@ export default function NewPill() {
             renderItem={({ item }) => (
               <View key={item.id} style={styles.timeRow}>
                 <TouchableOpacity onPress={() => removeTimeSlot(item.id)}>
-                  <Text style={styles.removeText}>✕</Text>
+                  <Text style={styles.removeText}> ✕</Text>
                 </TouchableOpacity>
-                <TextInput
+                <DateTimePicker
+                  mode="time"
                   style={styles.timeInput}
-                  placeholder="Time (e.g., 9:00 AM)"
                   value={item.time}
-                  onChangeText={(value) => updateTimeSlot(item.id, 'time', value)}
+                  onChange={(event, selectedTime) => {
+                    if (event.type === 'set') {
+                      updateTimeSlot(item.id, 'time', selectedTime);
+                    }
+                  }}
                 />
-                <TextInput
-                  style={styles.capsuleInput}
-                  placeholder="Capsules"
-                  value={item.capsules}
-                  onChangeText={(value) => updateTimeSlot(item.id, 'capsules', value)}
-                />
+              <View style={styles.capsuleContainer}>
+                  <TextInput 
+                    keyboardType="numeric"
+                    placeholder="Capsules"
+                    value={item.capsules.toString()}
+                    onChangeText={(text) => updateTimeSlot(item.id, 'capsules', parseInt(text) || 0)} // Update the state with the number
+                    style={styles.capsuleInput}
+                  />
+                  <Text style={styles.capsuleLabel}>Capsule</Text>
+                </View>
               </View>
             )}
           />
@@ -117,6 +146,7 @@ const FrequencyModal = ({ onFrequencyChange }) => {
       setSelectedDays([...selectedDays, dayIndex]);
     }
   };
+
 
   const handleDateChange = (event, selectedDate) => {
     if (showDatePicker === "start" && selectedDate) {
@@ -255,9 +285,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#F1F4FF",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingTop: 20,
+    paddingTop: 80,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 0,
   },
   modalHeader: {
     flexDirection: "row",
@@ -332,6 +362,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
     marginBottom: 10,
+    borderRadius: 10,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingTop: 2,
+    paddingBottom: 2,
+    backgroundColor: "#D8DFF4",
+  },
+  dateTimePickerContainer: {
+    flex: 1, 
+    justifyContent: "center"
   },
   removeText: {
     fontSize: 16,
@@ -340,20 +380,32 @@ const styles = StyleSheet.create({
   },
   timeInput: {
     flex: 1,
-    backgroundColor: "#D8DFF4",
-    borderRadius: 10,
-    padding: 10,
+    height: 50,
+    width: 20,
+    paddingRight:120,
     fontSize: 14,
     fontFamily: "OpenSans_400Regular",
-    marginRight: 10,
+    marginRight: 10, 
+
+  },
+  capsuleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 10
   },
   capsuleInput: {
-    width: 100,
-    backgroundColor: "#D8DFF4",
+    width: 30, 
     borderRadius: 10,
     padding: 10,
     fontSize: 14,
     fontFamily: "OpenSans_400Regular",
+    marginRight: 0,
+    color: '#3D6EFF'
+  },
+  capsuleLabel: {
+    fontSize: 14,
+    fontFamily: "OpenSans_400Regular",
+    color: '#3D6EFF'
   },
   addTimeText: {
     color: "#839ADE",
