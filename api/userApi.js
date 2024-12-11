@@ -35,3 +35,22 @@ export const login = async (credentials) => {
     throw error; 
   }
 };
+
+export const updateUser = async (userId, userData, token) => {
+  try {
+    const response = await apiClient.patch(`/users/${userId}`, userData, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    alert('Profile updated successfully!');
+    return response.data;
+  } catch (error) {
+    console.error("Profile update failed:", error.response ? error.response.data : error.message);
+    alert(
+      error.response?.data?.message || "An error occurred while updating the profile. Please try again."
+    );
+    throw error;
+  }
+};

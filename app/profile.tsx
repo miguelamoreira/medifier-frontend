@@ -1,18 +1,20 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TabBar from '../components/TabBar'
 import { useRouter } from 'expo-router';
+import { UserContext } from '@/contexts/UserContext';
 
 export default function Profile() {
   const router = useRouter();
+  const {user} = useContext(UserContext)!
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerBackground}>
         <View style={styles.profileSection}>
           <View style={styles.profilePicture}></View>
-          <Text style={styles.profileName}>Sara Lopes</Text>
+          <Text style={styles.profileName}>{user?.username}</Text>
         </View>
       </View>
 

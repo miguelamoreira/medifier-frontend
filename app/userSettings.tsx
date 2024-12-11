@@ -1,24 +1,52 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, TextInput } from "react-native";
+import React, { useContext, useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, TextInput, Alert } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { UserContext } from '@/contexts/UserContext';
+import { updateUser } from '@/api/userApi';
 
-export default function NotificationPage() {
+export default function UserSettings() {
   const router = useRouter();
+  const { user, token, setUserData } = useContext(UserContext)!;
+  const [username, setUsername] = useState(user?.username || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [isProfileUpdated, setIsProfileUpdated] = useState(false);
 
-  const [preferences, setPreferences] = React.useState({
-    medicationReminders: false,
-    missedDoseAlerts: false,
-    dailySummary: false,
-    pushNotifications: false,
-    smsNotifications: false,
-  });
+  const handleUpdate = async () => {
+    if (!token) {
+      alert("User is not authenticated. Please log in again.");
+      return;
+    }
 
-  const toggleSwitch = (key) => {
-    setPreferences((prevState) => ({
-      ...prevState,
-      [key]: !prevState[key],
-    }));
+    if (newPassword && newPassword !== password) {
+      alert("Passwords do not match!");
+      return;
+    }
+
+    try {
+      const updatedData = { username, email, password, newPassword };
+      await updateUser(user.id, updatedData, token);
+      alert("Profile updated successfully!");
+      setIsProfileUpdated(false);
+      setUserData({ ...user, username: updatedData.username, email: updatedData.email }, token!)
+      router.push('/profile');
+    } catch (error) {
+      alert("Failed to update profile. Please try again.");
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    if (field === "username" && value !== user?.username) setIsProfileUpdated(true);
+    if (field === "email" && value !== user?.email) setIsProfileUpdated(true);
+    if (field === "password" && value) setIsProfileUpdated(true);
+    if (field === "newPassword" && value) setIsProfileUpdated(true);
+
+    if (field === "username") setUsername(value);
+    if (field === "email") setEmail(value);
+    if (field === "password") setPassword(value);
+    if (field === "newPassword") setNewPassword(value);
   };
 
   return (
@@ -27,7 +55,7 @@ export default function NotificationPage() {
         <View style={styles.headerContent}>
           <Text style={styles.backText} onPress={() => router.push('/profile')}>&lt; Back</Text>
           <Text style={styles.title}>Personal info</Text>
-          <Text style={styles.doneText} onPress={() => router.push('/profile')}>Done</Text>
+          <Text style={styles.doneText} onPress={handleUpdate} disabled={!isProfileUpdated}>Done</Text>
         </View>
       </View>
       <View style={styles.headerSeparator} />
@@ -41,16 +69,16 @@ export default function NotificationPage() {
         </View>
 
         <Text style={styles.label}>Name</Text>
-        <TextInput style={styles.input} placeholder="Sara Lopes"/>
+        <TextInput style={styles.input}  value={username} onChangeText={(value) => handleInputChange('username', value)} placeholder="Username"/>
 
         <Text style={styles.label}>E-mail</Text>
-        <TextInput style={styles.input} placeholder="saralopes@email.com"/>
+        <TextInput style={styles.input} value={email} onChangeText={(value) => handleInputChange('email', value)} placeholder="Email"/>
 
         <Text style={styles.label}>Password</Text>
-        <TextInput style={styles.input} placeholder="*******"/>
+        <TextInput style={styles.input} value={password} onChangeText={(value) => handleInputChange('password', value)} placeholder="*******" secureTextEntry/>
 
         <Text style={styles.label}>Confirm your new password</Text>
-        <TextInput style={styles.input} placeholder="*******"/>
+        <TextInput style={styles.input} value={newPassword} onChangeText={(value) => handleInputChange('newPassword', value)} placeholder="*******" secureTextEntry/>
       </View>
     </SafeAreaView>
   );
@@ -98,11 +126,6 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     paddingHorizontal: 20,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontFamily: 'OpenSans_600SemiBold',
-    marginBottom: 12,
-  },
   profileContainer: {
     position: 'relative',
     alignItems: 'center',
@@ -133,52 +156,5 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 14,
     fontFamily: "OpenSans_400Regular",
-  },
-  optionBox: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 12
-  },
-  optionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#C7C8C4",
-  },
-  optionText: {
-    fontSize: 16,
-    fontFamily: "OpenSans_600SemiBold",
-  },
-  navbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    backgroundColor: '#303030',
-    paddingVertical: 10,
-    borderRadius: 30,
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    shadowColor: '#303030',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  newPillButton: {
-    backgroundColor: '#839ADE',
-    borderRadius: 25,
-    paddingHorizontal: 25,
-    paddingVertical: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  newPillText: {
-    color: '#424443',
-    fontSize: 16,
-    marginLeft: 5,
   },
 });

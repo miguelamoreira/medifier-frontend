@@ -4,26 +4,27 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { login } from '../api/userApi';
 import { UserContext } from '@/contexts/UserContext';
-export default function Login() {
-  const { setUser } = useContext(UserContext)!
 
+export default function Login() {
+  const { setUserData, setToken } = useContext(UserContext)!;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
 
-
   const handleLogin = async () => {
-    try {      
+    try {
       const response = await login({ email, password });
-      console.log('alo')
-      console.log('response:',response);
-      //Alert.alert('Success', 'You are logged in!');
+      console.log("Response:", response);
 
-      setUser(response.user);
-      router.push('/dashboard');
+      if (response.user && response.token) {
+        setUserData(response.user, response.token);
+        router.push("/dashboard");
+      } else {
+        throw new Error("Invalid response structure");
+      }
     } catch (error) {
-      console.log(error);
-      Alert.alert('Login Failed', 'An error occurred, please try again.');
+      console.error("Login failed:", error);
+      Alert.alert("Login Failed", "An error occurred, please try again.");
     }
   };
 
