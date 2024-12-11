@@ -54,3 +54,22 @@ export const updateUser = async (userId, userData, token) => {
     throw error;
   }
 };
+
+export const deleteUser = async (userId, token) => {
+  try {
+    const response = await apiClient.delete(`/users/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    alert('User deleted successfully!');
+    return response.data;
+  } catch (error) {
+    console.error("Delete user failed:", error.response ? error.response.data : error.message);
+    alert(
+      error.response?.data?.message || "An error occurred while deleting the user. Please try again."
+    );
+    throw error;
+  }
+};

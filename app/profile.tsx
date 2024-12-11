@@ -1,13 +1,38 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, SafeAreaView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TabBar from '../components/TabBar'
 import { useRouter } from 'expo-router';
 import { UserContext } from '@/contexts/UserContext';
+import { deleteUser } from '@/api/userApi';
 
 export default function Profile() {
   const router = useRouter();
-  const {user} = useContext(UserContext)!
+  const {user, token, clearUser} = useContext(UserContext)!
+
+  const handleDeleteAccount = async () => {
+    if (!user || !token) {
+      alert("You must be logged in to delete your account.");
+      return;
+    }
+
+    Alert.alert("Confirm Deletion", "Are you sure you want to delete your account? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", onPress: async () => {
+          try {
+            await deleteUser(user.id, token);
+            clearUser();
+            router.push('/onboarding');
+          } catch (error) {
+            console.error("Error deleting account:", error);
+            alert("An error occurred while deleting your account. Please try again.");
+          }
+        },
+      },
+    ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -64,7 +89,7 @@ export default function Profile() {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.option} onPress={() => router.push('/onboarding')}>
+          <TouchableOpacity style={styles.option} onPress={handleDeleteAccount}>
             <View style={styles.row}>
               <Ionicons name="trash-outline" size={20} style={styles.icon} />
               <Text style={styles.optionText}>Delete Account</Text>
