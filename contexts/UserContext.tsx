@@ -4,6 +4,7 @@ import React, { createContext, useState, ReactNode, useEffect } from "react";
 interface User {
   username: string;
   email: string;
+  avatar: string;
 }
 
 // definimos os tipos de contexto
@@ -24,6 +25,7 @@ interface UserProviderProps {
 
 const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUserState] = useState<User | null>(null);
+  
   const [token, setTokenState] = useState<string | null>(null);
 
   useEffect(() => {

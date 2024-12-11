@@ -1,5 +1,5 @@
-import React, { useState, useContext } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import React, { useState, useContext, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TabBar from '../components/TabBar';
 import { UserContext } from '@/contexts/UserContext';
@@ -61,7 +61,9 @@ export default function Dashboard() {
         <Text style={styles.greeting}>Hello, {user?.username} 👋</Text>
         <View style={styles.headerIcons}>
           <Ionicons name="notifications-outline" size={24} color="#333" style={styles.icon} />
-          <View style={styles.profilePicture}></View>
+          <View style={styles.profilePictureContainer}>
+              <Image source={{ uri: user?.avatar }} style={styles.profilePicture}/>
+          </View>
         </View>
       </View>
 
@@ -146,6 +148,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 1,
+  },
+  profilePictureContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: '#DDD',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profilePicture: {
     width: 40,

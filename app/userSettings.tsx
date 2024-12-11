@@ -1,13 +1,16 @@
 import React, { useContext, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, TextInput, Alert } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, TextInput, Alert, Image } from "react-native";
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { UserContext } from '@/contexts/UserContext';
-import { updateUser } from '@/api/userApi';
+import { updateUser, updateAvatar } from '@/api/userApi';
 
 export default function UserSettings() {
   const router = useRouter();
   const { user, token, setUserData } = useContext(UserContext)!;
+  
+  const [avatar, setAvatar] = useState(user?.avatar || null);
   const [username, setUsername] = useState(user?.username || "");
   const [email, setEmail] = useState(user?.email || "");
   const [password, setPassword] = useState("");
@@ -16,24 +19,51 @@ export default function UserSettings() {
 
   const handleUpdate = async () => {
     if (!token) {
-      alert("User is not authenticated. Please log in again.");
+      Alert.alert("Error", "User is not authenticated. Please log in again.");
       return;
     }
 
     if (newPassword && newPassword !== password) {
-      alert("Passwords do not match!");
+      Alert.alert("Error", "Passwords do not match!");
       return;
     }
 
     try {
       const updatedData = { username, email, password, newPassword };
       await updateUser(user.id, updatedData, token);
-      alert("Profile updated successfully!");
+
+      if (avatar && avatar !== user?.avatar) {
+        const imageFile = {
+          uri: avatar,
+          type: 'image/jpeg',
+          name: 'avatar.jpg',
+        };
+
+        await updateAvatar(user.id, imageFile, token); 
+      }
+
+      const updatedUser = { ...user, username: updatedData.username, email: updatedData.email, avatar: avatar || user?.avatar };
+      setUserData(updatedUser, token); 
+
+      Alert.alert("Success", "Profile updated successfully!");
       setIsProfileUpdated(false);
-      setUserData({ ...user, username: updatedData.username, email: updatedData.email }, token!)
       router.push('/profile');
     } catch (error) {
-      alert("Failed to update profile. Please try again.");
+      Alert.alert("Error", "Failed to update profile. Please try again.");
+    }
+  };
+
+  const pickAvatar = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setAvatar(result.assets[0].uri);
+      setIsProfileUpdated(true);
     }
   };
 
@@ -62,14 +92,14 @@ export default function UserSettings() {
 
       <View style={styles.section}>
         <View style={styles.profileContainer}>
-          <View style={styles.profilePicture}></View>
-          <TouchableOpacity style={styles.editButton}>
+          <Image source={{ uri: avatar || user.avatar }} style={styles.profilePicture}/>
+          <TouchableOpacity style={styles.editButton} onPress={pickAvatar}>
             <Ionicons name="pencil" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
         <Text style={styles.label}>Name</Text>
-        <TextInput style={styles.input}  value={username} onChangeText={(value) => handleInputChange('username', value)} placeholder="Username"/>
+        <TextInput style={styles.input} value={username} onChangeText={(value) => handleInputChange('username', value)} placeholder="Username"/>
 
         <Text style={styles.label}>E-mail</Text>
         <TextInput style={styles.input} value={email} onChangeText={(value) => handleInputChange('email', value)} placeholder="Email"/>

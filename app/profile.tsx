@@ -38,7 +38,9 @@ export default function Profile() {
     <SafeAreaView style={styles.container}>
       <View style={styles.headerBackground}>
         <View style={styles.profileSection}>
-          <View style={styles.profilePicture}></View>
+          <View style={styles.profilePictureContainer}>
+              <Image source={{ uri: user?.avatar }} style={styles.profilePicture}/>
+          </View>
           <Text style={styles.profileName}>{user?.username}</Text>
         </View>
       </View>
@@ -120,6 +122,15 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     marginTop: 160,
+  },
+  profilePictureContainer: {
+    width: 190,
+    height: 190,
+    borderRadius: 100,
+    overflow: 'hidden',
+    backgroundColor: '#DDD',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profilePicture: {
     width: 190,

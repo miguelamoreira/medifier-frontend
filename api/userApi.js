@@ -55,6 +55,29 @@ export const updateUser = async (userId, userData, token) => {
   }
 };
 
+export const updateAvatar = async (userId, file, token) => {
+  const formData = new FormData();
+  formData.append('avatar', {
+    uri: file.uri, 
+    type: file.type, 
+    name: file.name,
+  });
+
+  try {
+    const response = await apiClient.post(`/users/${userId}/avatar`, formData, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data; 
+  } catch (error) {
+    console.error('Avatar upload failed:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+};
+
 export const deleteUser = async (userId, token) => {
   try {
     const response = await apiClient.delete(`/users/${userId}`, {

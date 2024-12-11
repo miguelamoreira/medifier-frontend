@@ -18,6 +18,7 @@ export default function Login() {
 
       if (response.user && response.token) {
         setUserData(response.user, response.token);
+        
         router.push("/dashboard");
       } else {
         throw new Error("Invalid response structure");
