@@ -96,3 +96,21 @@ export const deleteUser = async (userId, token) => {
     throw error;
   }
 };
+
+export const fetchAgenda = async (userId, token) => {
+  try {
+    const response = await apiClient.get(`/agenda`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    return response.data.agendaItems;
+  } catch (error) {
+    console.error("Failed to fetch agenda:", error.response ? error.response.data : error.message);
+    alert(
+      error.response?.data?.message || "An error occurred while fetching the agenda. Please try again."
+    );
+    throw error;
+  }
+};

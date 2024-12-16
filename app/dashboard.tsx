@@ -3,53 +3,98 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Ima
 import { Ionicons } from '@expo/vector-icons';
 import TabBar from '../components/TabBar';
 import { UserContext } from '@/contexts/UserContext';
-export default function Dashboard() {
-  const {user} = useContext(UserContext)!
-  
-  const date = new Date();
-  const today = date.getDay(); 
-  const [selectedDay, setSelectedDay] = useState(today === 0 ? 6 : today - 1);
-  
-  const options: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: 'long',
-  };
-  const startOfWeek = new Date(date.setDate(date.getDate() - date.getDay() + 1));
-  const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+import { fetchAgenda } from '@/api/userApi';
 
-  const weekDates = daysOfWeek.map((_, index) => {
+interface Medication {
+  time: string;
+  medication: string;
+  amount: string;
+  startDate: string;
+  endDate: string;
+}
+
+interface GroupedAgenda {
+  [key: number]: Medication[];
+}
+
+export default function Dashboard() {
+  const { user, token } = useContext(UserContext);
+  const date = new Date();
+  const today = date.getDay();
+  const [selectedDay, setSelectedDay] = useState<number>(today === 0 ? 6 : today - 1);
+  const [agenda, setAgenda] = useState<GroupedAgenda>({});
+
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
+  };
+  
+  const startOfWeek = new Date(date.setDate(date.getDate() - date.getDay() + 1));
+  const daysOfWeek: string[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  const weekDates: number[] = daysOfWeek.map((_, index) => {
     const newDate = new Date(startOfWeek);
-    newDate.setDate(startOfWeek.getDate() + index); 
-    return newDate.getDate(); 
+    newDate.setDate(startOfWeek.getDate() + index);
+    return newDate.getDate();
   });
 
-
   const formattedDate: string = date.toLocaleDateString(undefined, options);
-  const medicationData = {
-    0: [
-      { time: '8:00 AM', name: 'Vitamin C', details: '500mg - with water', color: '#E8F0FE' },
-      { time: '9:00 PM', name: 'Melatonin', details: '10mg - before sleep', color: '#FFF6D8' },
-    ],
-    4: [
-      { time: '9:00 AM', name: 'Azithromycin', details: '200mg - after food', color: '#E8F0FE' },
-      { time: '12:00 PM', name: 'CardioActive', details: '20ml - 1 capsule', color: '#FFF6D8' },
-      { time: '6:00 PM', name: 'Synthroid', details: '150mg - 1/2 capsule', color: '#FEE9E9' },
-      { time: '9:00 PM', name: 'Azithromycin', details: '200mg - after food', color: '#E8F0FE' },
-    ],
-    5: [
-      { time: '7:00 AM', name: 'Iron Supplement', details: '300mg - with breakfast', color: '#FEE9E9' },
-      { time: '5:00 PM', name: 'Multivitamin', details: '1 tablet - with water', color: '#FFF6D8' },
-    ],
+
+  useEffect(() => {
+    const loadAgenda = async () => {
+      try {
+        const fetchedData = await fetchAgenda(user.id, token);
+        const agendaItems: Medication[] = fetchedData.flatMap(entry => entry.items);
+        const agendaByDay: GroupedAgenda = groupAgendaByDay(agendaItems);
+
+        setAgenda(agendaByDay);
+      } catch (error) {
+        console.error('Error loading agenda:', error);
+      }
+    };
+
+    loadAgenda();
+  }, [user, token]);
+
+  const groupAgendaByDay = (agendaItems: Medication[]): GroupedAgenda => {
+    const grouped: GroupedAgenda = {};
+
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + 1);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    agendaItems.forEach((item) => {
+      const startDate = new Date(item.startDate);
+      const endDate = new Date(item.endDate);
+
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(0, 0, 0, 0);
+
+      for (
+        let currentDate = new Date(startDate);
+        currentDate <= endDate;
+        currentDate.setDate(currentDate.getDate() + 1)
+      ) {
+        const dayIndex = Math.floor((currentDate.getTime() - startOfWeek.getTime()) / (24 * 60 * 60 * 1000));
+
+        if (dayIndex >= 0 && dayIndex < 7) {
+          if (!grouped[dayIndex]) grouped[dayIndex] = [];
+          grouped[dayIndex].push(item);
+        }
+      }
+    });
+
+    return grouped;
   };
 
   const renderMedications = () => {
-    const meds = medicationData[selectedDay] || [];
+    const meds = agenda[selectedDay] || [];
     return meds.map((med, index) => (
       <View key={index} style={styles.reminderItem}>
         <Text style={styles.timeText}>{med.time}</Text>
-        <View style={[styles.medicationCard, { backgroundColor: med.color }]}>
-          <Text style={styles.medicationName}>{med.name}</Text>
-          <Text style={styles.medicationDetails}>{med.details}</Text>
+        <View style={[styles.medicationCard, { backgroundColor: '#E8F0FE' }]}>
+          <Text style={styles.medicationName}>{med.medication}</Text>
+          <Text style={styles.medicationDetails}>{`${med.amount} - from ${new Date(med.startDate).toLocaleDateString()} to ${new Date(med.endDate).toLocaleDateString()}`}</Text>
         </View>
       </View>
     ));
@@ -60,14 +105,19 @@ export default function Dashboard() {
       <View style={styles.header}>
         <Text style={styles.greeting}>Hello, {user?.username} 👋</Text>
         <View style={styles.headerIcons}>
-          <Ionicons name="notifications-outline" size={24} color="#333" style={styles.icon} />
+          <Ionicons
+            name="notifications-outline"
+            size={24}
+            color="#333"
+            style={styles.icon}
+          />
           <View style={styles.profilePictureContainer}>
-              <Image source={{ uri: user?.avatar }} style={styles.profilePicture}/>
+            <Image source={{ uri: user?.avatar }} style={styles.profilePicture} />
           </View>
         </View>
       </View>
 
-      <Text style={styles.subtitle}>{ formattedDate }</Text>
+      <Text style={styles.subtitle}>{formattedDate}</Text>
       <Text style={styles.title}>Today’s reminders</Text>
 
       <View style={styles.calendar}>
@@ -94,7 +144,7 @@ export default function Dashboard() {
                     index === selectedDay && styles.selectedDateText,
                   ]}
                 >
-                  {weekDates[index]} {/* Display the corresponding day of the month */}
+                  {weekDates[index]}
                 </Text>
               </View>
             </View>
@@ -111,7 +161,7 @@ export default function Dashboard() {
         <ScrollView>{renderMedications()}</ScrollView>
       </View>
 
-      <TabBar></TabBar>
+      <TabBar />
     </SafeAreaView>
   );
 }
@@ -121,7 +171,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9F9FB',
     paddingTop: 60,
-    fontFamily: 'OpenSans_400Regular'
+    fontFamily: 'OpenSans_400Regular',
   },
   header: {
     flexDirection: 'row',
@@ -193,7 +243,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   selectedDayText: {
-    color: '#839ADE', 
+    color: '#839ADE',
     fontWeight: 'bold',
   },
   calendarDateCircle: {
@@ -205,7 +255,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   selectedDateCircle: {
-    backgroundColor: '#292A2A', 
+    backgroundColor: '#292A2A',
   },
   calendarDateText: {
     fontSize: 16,
@@ -248,7 +298,7 @@ const styles = StyleSheet.create({
   },
   medicationCard: {
     flex: 1,
-    height: 80, 
+    height: 80,
     padding: 15,
     borderRadius: 10,
     justifyContent: 'center',
@@ -262,34 +312,5 @@ const styles = StyleSheet.create({
   medicationDetails: {
     fontSize: 14,
     color: '#5C5E5D',
-  },
-  navbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    backgroundColor: '#303030',
-    paddingVertical: 10,
-    borderRadius: 30,
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    shadowColor: '#303030',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  newPillButton: {
-    backgroundColor: '#839ADE',
-    borderRadius: 25,
-    paddingHorizontal: 25,
-    paddingVertical: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  newPillText: {
-    color: '#424443',
-    fontSize: 16,
-    marginLeft: 5,
   },
 });
