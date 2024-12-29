@@ -5,12 +5,16 @@ import TabBar from '../components/TabBar';
 import { UserContext } from '@/contexts/UserContext';
 import { fetchAgenda } from '@/api/userApi';
 
-interface Medication {
+interface Time {
   time: string;
+  amount: string
+}
+
+interface Medication {
   medication: string;
-  amount: string;
-  startDate: string;
-  endDate: string;
+  startDate: Date;
+  endDate: Date;
+  times: Time[];
 }
 
 interface GroupedAgenda {
@@ -44,17 +48,21 @@ export default function Dashboard() {
     const loadAgenda = async () => {
       try {
         const fetchedData = await fetchAgenda(user.id, token);
+        console.log('Fetched Data:', fetchedData); // Check the raw data from the API
+        
         const agendaItems: Medication[] = fetchedData.flatMap(entry => entry.items);
+        console.log('Agenda Items:', agendaItems); // Check the items, specifically the "times" array
+  
         const agendaByDay: GroupedAgenda = groupAgendaByDay(agendaItems);
-
         setAgenda(agendaByDay);
       } catch (error) {
         console.error('Error loading agenda:', error);
       }
     };
-
+  
     loadAgenda();
   }, [user, token]);
+  
 
   const groupAgendaByDay = (agendaItems: Medication[]): GroupedAgenda => {
     const grouped: GroupedAgenda = {};
@@ -82,13 +90,13 @@ export default function Dashboard() {
           grouped[dayIndex].push(item);
         }
       }
-    });
-
+    });    
     return grouped;
   };
 
   const renderMedications = () => {
     const meds = agenda[selectedDay] || [];
+    meds.forEach(m => console.log(m.times))
     return meds.map((med, index) => (
       <View key={index} style={styles.reminderItem}>
         <Text style={styles.timeText}>{med.time}</Text>

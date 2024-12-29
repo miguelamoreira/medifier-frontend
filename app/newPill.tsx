@@ -1,55 +1,92 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, FlatList, Modal } from "react-native";
-import { useRouter } from 'expo-router';
+import { useRouter } from "expo-router";
 import { Picker } from "@react-native-picker/picker";
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent, Event } from "@react-native-community/datetimepicker";
+import { addAgendaItem } from "../api/userApi";
+import { UserContext } from "@/contexts/UserContext";
 
 export default function NewPill() {
   const router = useRouter();
-  const [modalVisible, setModalVisible] = useState(true);
-  const [times, setTimes] = useState([
+  const userContext = useContext(UserContext);
+
+  if (!userContext) {
+    throw new Error("UserContext is not provided. Please wrap the component with UserContext.Provider.");
+  }
+
+  const { user, token, clearUser } = userContext;
+
+  const [modalVisible, setModalVisible] = useState<boolean>(true);
+  const [times, setTimes] = useState<{ id: number; time: Date; capsules: number }[]>([
     { id: 1, time: new Date(0, 0, 0, 9, 0), capsules: 1 },
     { id: 2, time: new Date(0, 0, 0, 21, 0), capsules: 2 },
   ]);
-  const [frequencyModalVisible, setFrequencyModalVisible] = useState(false);
-  const [frequency, setFrequency] = useState('Every Day');
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState(null);
+  const [frequencyModalVisible, setFrequencyModalVisible] = useState<boolean>(false);
+  const [frequency, setFrequency] = useState<string>("Every Day");
+  const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
+  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<number | null>(null);
+  const [pillName, setPillName] = useState<string>("");
+  const [pillStrength, setPillStrength] = useState<string>("");
+  const [startDate, setStartDate] = useState<Date>(new Date());
+  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
 
-  const addTimeSlot = () => {
+  const addTimeSlot = (): void => {
     const newTime = { id: Date.now(), time: new Date(), capsules: 1 };
     setTimes([...times, newTime]);
   };
 
-  const removeTimeSlot = (id) => {
-    setTimes(times.filter(item => item.id !== id));
+  const removeTimeSlot = (id: number): void => {
+    setTimes(times.filter((item) => item.id !== id));
   };
 
-  const updateTimeSlot = (id, key, value) => {
-    setTimes(times.map(item => (item.id === id ? { ...item, [key]: value } : item)));
+  const updateTimeSlot = (id: number, key: "time" | "capsules", value: any): void => {
+    setTimes(times.map((item) => (item.id === id ? { ...item, [key]: value } : item)));
   };
 
-  const handleTimeChange = (event, selectedTime) => {
-    if (selectedTime) {
-      const newTime = selectedTime;
-      updateTimeSlot(selectedTimeSlotId, 'time', newTime);
+  const handleTimeChange = (event: DateTimePickerEvent, date?: Date): void => {
+    if (event.type === "set" && date && selectedTimeSlotId !== null) {
+      updateTimeSlot(selectedTimeSlotId, "time", date); // Update the selected time slot's time
     }
-    setShowTimePicker(false);
+    setShowTimePicker(false); // Close the time picker
   };
 
-  const handleDone = () => {
+  const handleFrequencyChange = (frequencyData: any): void => {
+    if (frequencyData) {
+      setFrequency(frequencyData.frequency || "Every Day");
+      setStartDate(frequencyData.startDate || new Date());
+      setEndDate(frequencyData.endDate || new Date());
+      if (frequencyData.selectedDays) setSelectedDays(frequencyData.selectedDays);
+    }
+  };
+
+  const handleDone = async (): Promise<void> => {
+    const pillData = {
+      medication: pillName,
+      strength: pillStrength,
+      frequency,
+      startDate,
+      endDate,
+      times: times.map((timeSlot) => ({
+        time: timeSlot.time.toLocaleTimeString(),
+        amount: timeSlot.capsules.toString(),
+      })),
+      selectedDays: frequency === "On specific days of the week" ? selectedDays : undefined,
+    };
+
+    try {
+      await addAgendaItem(pillData, token);
+      alert("Pill added successfully!");
+      setModalVisible(false);
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Failed to add pill:", error);
+    }
+  };
+
+  const handleCancel = (): void => {
     setModalVisible(false);
-    router.push('/dashboard');
-  };
-
-  const handleCancel = () => {
-    setModalVisible(false);
-    router.push('/dashboard');
-  };
-
-  const handleFrequencyChange = (newFrequency) => {
-    setFrequency(newFrequency);
-    setFrequencyModalVisible(false);
+    router.push("/dashboard");
   };
 
   return (
@@ -67,13 +104,27 @@ export default function NewPill() {
 
         <View style={styles.modalBody}>
           <Text style={styles.label}>Pill Name</Text>
-          <TextInput style={styles.input} placeholder="Add Pill Name" />
+          <TextInput
+            style={styles.input}
+            placeholder="Add Pill Name"
+            value={pillName}
+            onChangeText={setPillName}
+          />
 
           <Text style={styles.label}>Strength (mg)</Text>
-          <TextInput style={styles.input} placeholder="Add Strength" keyboardType="numeric" />
+          <TextInput
+            style={styles.input}
+            placeholder="Add Strength"
+            keyboardType="numeric"
+            value={pillStrength}
+            onChangeText={setPillStrength}
+          />
 
           <Text style={styles.sectionTitle}>When will you take this?</Text>
-          <TouchableOpacity style={styles.frequencyContainer} onPress={() => setFrequencyModalVisible(true)}>
+          <TouchableOpacity
+            style={styles.frequencyContainer}
+            onPress={() => setFrequencyModalVisible(true)}
+          >
             <Text style={styles.frequencyLabel}>Frequency</Text>
             <Text style={styles.frequencyText}>{frequency}</Text>
           </TouchableOpacity>
@@ -85,28 +136,30 @@ export default function NewPill() {
             renderItem={({ item }) => (
               <View key={item.id} style={styles.timeRow}>
                 <TouchableOpacity onPress={() => removeTimeSlot(item.id)}>
-                  <Text style={styles.removeText}> ✕</Text>
+                  <Text style={styles.removeText}>✕</Text>
                 </TouchableOpacity>
-                <DateTimePicker
-                  mode="time"
-                  style={styles.timeInput}
-                  value={item.time}
-                  onChange={(event, selectedTime) => {
-                    if (event.type === 'set') {
-                      updateTimeSlot(item.id, 'time', selectedTime);
-                    }
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedTimeSlotId(item.id);
+                    setShowTimePicker(true);
                   }}
+                >
+                  <Text style={styles.timeText}>
+                    {item.time.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                </TouchableOpacity>
+                <TextInput
+                  keyboardType="numeric"
+                  placeholder="Capsules"
+                  value={item.capsules.toString()}
+                  onChangeText={(text) =>
+                    updateTimeSlot(item.id, "capsules", parseInt(text) || 0)
+                  }
+                  style={styles.capsuleInput}
                 />
-              <View style={styles.capsuleContainer}>
-                  <TextInput 
-                    keyboardType="numeric"
-                    placeholder="Capsules"
-                    value={item.capsules.toString()}
-                    onChangeText={(text) => updateTimeSlot(item.id, 'capsules', parseInt(text) || 0)} // Update the state with the number
-                    style={styles.capsuleInput}
-                  />
-                  <Text style={styles.capsuleLabel}>Capsule</Text>
-                </View>
               </View>
             )}
           />
@@ -116,18 +169,37 @@ export default function NewPill() {
         </View>
       </View>
 
-      {frequencyModalVisible && <FrequencyModal onFrequencyChange={handleFrequencyChange} />}
+      {showTimePicker && (
+        <DateTimePicker
+          mode="time"
+          value={times.find((item) => item.id === selectedTimeSlotId)?.time || new Date()}
+          onChange={handleTimeChange}
+        />
+      )}
+
+      {frequencyModalVisible && (
+        <FrequencyModal
+          onFrequencyChange={(frequencyData) => {
+            if (frequencyData) {
+              handleFrequencyChange(frequencyData); // Update frequency data
+            }
+            setFrequencyModalVisible(false); // Close the modal
+          }}
+        />
+      )}
     </Modal>
   );
 }
 
-const FrequencyModal = ({ onFrequencyChange }) => {
-  const [selectedFrequency, setSelectedFrequency] = useState("At regular intervals");
-  const [selectedInterval, setSelectedInterval] = useState("Every Day");
-  const [selectedDays, setSelectedDays] = useState([]);
-  const [startDate, setStartDate] = useState(new Date("2024-11-04"));
-  const [endDate, setEndDate] = useState(new Date("2025-02-04"));
-  const [showDatePicker, setShowDatePicker] = useState(null);
+
+const FrequencyModal = ({ onFrequencyChange }: { onFrequencyChange: (newFrequency: any | null) => void }) => {
+  const [selectedFrequency, setSelectedFrequency] = useState<string>("At regular intervals");
+  const [selectedInterval, setSelectedInterval] = useState<string>("Every Day");
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [startDate, setStartDate] = useState<Date>(new Date());
+  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null); // For validation errors
 
   const daysOfWeek = [
     { short: "M", label: "Mon" },
@@ -139,71 +211,86 @@ const FrequencyModal = ({ onFrequencyChange }) => {
     { short: "S", label: "Sun" },
   ];
 
-  const toggleDay = (dayIndex) => {
+  const toggleDay = (dayIndex: number): void => {
     if (selectedDays.includes(dayIndex)) {
       setSelectedDays(selectedDays.filter((index) => index !== dayIndex));
     } else {
       setSelectedDays([...selectedDays, dayIndex]);
     }
+    setError(null); // Clear error on day selection
   };
 
-
-  const handleDateChange = (event, selectedDate) => {
+  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date): void => {
     if (showDatePicker === "start" && selectedDate) {
       setStartDate(selectedDate);
     } else if (showDatePicker === "end" && selectedDate) {
       setEndDate(selectedDate);
     }
-    setShowDatePicker(null);
+    setShowDatePicker(null); // Close the date picker
+  };
+
+  const handleDone = () => {
+    if (selectedFrequency === "On specific days of the week" && selectedDays.length === 0) {
+      setError("Please select at least one day of the week.");
+      return;
+    }
+
+    const frequencyData = {
+      frequency: selectedFrequency,
+      interval: selectedInterval,
+      startDate,
+      endDate,
+      selectedDays: selectedFrequency === "On specific days of the week" ? selectedDays : undefined,
+    };
+
+    onFrequencyChange(frequencyData); // Pass the frequency data back to the parent
+  };
+
+  const handleCancel = () => {
+    onFrequencyChange(null); // Notify the parent to close the modal
   };
 
   return (
     <Modal visible={true} animationType="slide" transparent>
       <View style={styles.modalContainer}>
         <View style={styles.modalHeader}>
-          <TouchableOpacity onPress={() => onFrequencyChange(null)}>
+          <TouchableOpacity onPress={handleCancel}>
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
           <Text style={styles.headerText}>Frequency</Text>
-          <TouchableOpacity onPress={() => onFrequencyChange(selectedFrequency)}>
+          <TouchableOpacity onPress={handleDone}>
             <Text style={styles.doneText}>Done</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.modalBody}>
+          {/* Frequency selection logic */}
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={selectedFrequency}
               style={styles.picker}
-              dropdownIconColor="#839ADE"
-              onValueChange={(itemValue) => setSelectedFrequency(itemValue)}
+              onValueChange={(itemValue) => {
+                setSelectedFrequency(itemValue);
+                setError(null); // Clear any existing errors when changing frequency
+              }}
             >
-              <Picker.Item
-                label="At regular intervals"
-                value="At regular intervals"
-              />
-              <Picker.Item
-                label="On specific days of the week"
-                value="On specific days of the week"
-              />
+              <Picker.Item label="At regular intervals" value="At regular intervals" />
+              <Picker.Item label="On specific days of the week" value="On specific days of the week" />
             </Picker>
           </View>
 
           {selectedFrequency === "At regular intervals" && (
             <>
               <Text style={styles.sectionLabel}>Choose interval</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedInterval}
-                  style={styles.picker}
-                  dropdownIconColor="#839ADE"
-                  onValueChange={(itemValue) => setSelectedInterval(itemValue)}
-                >
-                  <Picker.Item label="Every Day" value="Every Day" />
-                  <Picker.Item label="Every Week" value="Every Week" />
-                  <Picker.Item label="Every Month" value="Every Month" />
-                </Picker>
-              </View>
+              <Picker
+                selectedValue={selectedInterval}
+                style={styles.picker}
+                onValueChange={(itemValue) => setSelectedInterval(itemValue)}
+              >
+                <Picker.Item label="Every Day" value="Every Day" />
+                <Picker.Item label="Every Week" value="Every Week" />
+                <Picker.Item label="Every Month" value="Every Month" />
+              </Picker>
             </>
           )}
 
@@ -214,28 +301,21 @@ const FrequencyModal = ({ onFrequencyChange }) => {
                 {daysOfWeek.map((day, index) => (
                   <TouchableOpacity
                     key={index}
-                    style={[
-                      styles.dayButton,
-                      selectedDays.includes(index) && styles.dayButtonSelected,
-                    ]}
+                    style={[styles.dayButton, selectedDays.includes(index) && styles.dayButtonSelected]}
                     onPress={() => toggleDay(index)}
                   >
                     <Text
-                      style={[
-                        styles.dayText,
-                        selectedDays.includes(index) && styles.dayTextSelected,
-                      ]}
+                      style={[styles.dayText, selectedDays.includes(index) && styles.dayTextSelected]}
                     >
                       {day.short}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
+              {error && <Text>{error}</Text>}
               <Text style={styles.selectedDaysText}>
                 {selectedDays.length > 0
-                  ? selectedDays
-                      .map((index) => daysOfWeek[index].label)
-                      .join(", ")
+                  ? selectedDays.map((index) => daysOfWeek[index].label).join(", ")
                   : "No days selected"}
               </Text>
             </>
@@ -243,24 +323,14 @@ const FrequencyModal = ({ onFrequencyChange }) => {
 
           <View style={styles.dateContainer}>
             <Text style={styles.dateLabel}>Start Date</Text>
-            <TouchableOpacity
-              onPress={() => setShowDatePicker("start")}
-              style={styles.dateInput}
-            >
-              <Text style={styles.dateText}>
-                {startDate.toLocaleDateString("en-GB")}
-              </Text>
+            <TouchableOpacity onPress={() => setShowDatePicker("start")} style={styles.dateInput}>
+              <Text style={styles.dateText}>{startDate.toLocaleDateString("en-GB")}</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.dateContainer}>
             <Text style={styles.dateLabel}>End Date</Text>
-            <TouchableOpacity
-              onPress={() => setShowDatePicker("end")}
-              style={styles.dateInput}
-            >
-              <Text style={styles.dateText}>
-                {endDate.toLocaleDateString("en-GB")}
-              </Text>
+            <TouchableOpacity onPress={() => setShowDatePicker("end")} style={styles.dateInput}>
+              <Text style={styles.dateText}>{endDate.toLocaleDateString("en-GB")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -277,6 +347,8 @@ const FrequencyModal = ({ onFrequencyChange }) => {
     </Modal>
   );
 };
+
+
 
 
 const styles = StyleSheet.create({
@@ -333,24 +405,25 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontFamily: 'OpenSans_600SemiBold',
     marginTop: 20,
+    marginBottom: 8,
   },
   frequencyContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#D8DFF4",
     borderRadius: 10,
     padding: 12,
-    marginTop: 10,
+    marginBottom: 12,
   },
   frequencyLabel: {
-    fontFamily: "OpenSans_400Regular",
     fontSize: 14,
+    fontFamily: "OpenSans_400Regular",
+    color: "#292A2A",
   },
   frequencyText: {
     fontSize: 14,
-    color: "#839ADE",
     fontFamily: "OpenSans_400Regular",
+    color: "#839ADE",
   },
   timesTitle: {
     fontSize: 16,
@@ -374,105 +447,106 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   removeText: {
+    color: "#FF6B6B",
     fontSize: 16,
-    color: "#FF0000",
-    marginRight: 10,
+    marginRight: 8,
   },
-  timeInput: {
-    flex: 1,
-    height: 50,
-    width: 20,
-    paddingRight:120,
+  timeText: {
     fontSize: 14,
     fontFamily: "OpenSans_400Regular",
-    marginRight: 10, 
-
+    marginHorizontal: 8,
+    color: "#292A2A",
   },
   capsuleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 10
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 8,
   },
   capsuleInput: {
-    width: 30, 
+    width: 50,
+    height: 40,
+    backgroundColor: "#D8DFF4",
     borderRadius: 10,
-    padding: 10,
+    paddingHorizontal: 8,
     fontSize: 14,
     fontFamily: "OpenSans_400Regular",
-    marginRight: 0,
-    color: '#3D6EFF'
+    textAlign: "center",
+    marginRight: 8,
   },
   capsuleLabel: {
     fontSize: 14,
     fontFamily: "OpenSans_400Regular",
-    color: '#3D6EFF'
+    color: "#292A2A",
   },
   addTimeText: {
     color: "#839ADE",
-    marginTop: 10,
-    fontFamily: "OpenSans_400Regular",
-  },
-  sectionLabel: {
     fontSize: 16,
-    color: "#929491",
-    marginBottom: 12
+    fontFamily: "OpenSans_600SemiBold",
+    marginTop: 12,
   },
   pickerContainer: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    backgroundColor: "#D8DFF4",
+    borderRadius: 10,
+    padding: 10,
     marginBottom: 20,
-    height: 50,
-    justifyContent: "center",
   },
   picker: {
     color: "#292A2A",
-    height: 50,
+  },
+  sectionLabel: {
+    fontSize: 16,
+    fontFamily: "OpenSans_600SemiBold",
+    marginBottom: 8,
   },
   daysContainer: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
-    marginVertical: 20,
+    marginBottom: 12,
   },
   dayButton: {
     width: 40,
     height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#839ADE",
+    backgroundColor: "#D8DFF4",
+    margin: 4,
   },
   dayButtonSelected: {
     backgroundColor: "#839ADE",
-    borderWidth: 0,
   },
   dayText: {
-    color: "#839ADE",
+    fontSize: 16,
+    fontFamily: "OpenSans_400Regular",
+    color: "#292A2A",
   },
   dayTextSelected: {
     color: "#FFFFFF",
   },
   selectedDaysText: {
-    textAlign: "center",
-    fontSize: 16,
-    color: "#929491",
-    marginBottom: 12
+    fontSize: 14,
+    fontFamily: "OpenSans_400Regular",
+    color: "#292A2A",
+    marginBottom: 20,
   },
   dateContainer: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   dateLabel: {
     fontSize: 16,
-    color: "#9C9C9C",
-    marginBottom: 5,
+    fontFamily: "OpenSans_600SemiBold",
+    marginBottom: 8,
   },
   dateInput: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#D8DFF4",
     borderRadius: 10,
-    padding: 10,
+    padding: 12,
   },
   dateText: {
-    fontSize: 16,
+    fontSize: 14,
+    fontFamily: "OpenSans_400Regular",
+    color: "#292A2A",
   },
 });
+

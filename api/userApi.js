@@ -114,3 +114,17 @@ export const fetchAgenda = async (userId, token) => {
     throw error;
   }
 };
+
+export const addAgendaItem = async (pillData, token) => {
+  try {
+    const response = await apiClient.post('/agenda', pillData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Failed to add agenda item:", error.response?.data || error.message);
+    throw error;
+  }
+};
