@@ -127,7 +127,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
-    margin: 16,
     fontFamily: 'OpenSans_400Regular'
   },
   title: {
