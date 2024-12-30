@@ -48,7 +48,7 @@ export default function NewPill() {
     if (event.type === "set" && date && selectedTimeSlotId !== null) {
       updateTimeSlot(selectedTimeSlotId, "time", date); // Update the selected time slot's time
     }
-    setShowTimePicker(false); // Close the time picker
+    setShowTimePicker(false); 
   };
 
   const handleFrequencyChange = (frequencyData: any): void => {
@@ -61,28 +61,45 @@ export default function NewPill() {
   };
 
   const handleDone = async (): Promise<void> => {
+    if (times.length === 0) {
+      console.warn("Times array is empty!");
+    } else {
+      times.forEach((timeSlot, index) => {
+        console.log(`Time Slot ${index + 1}:`, {
+          time: timeSlot.time,
+          capsules: timeSlot.capsules,
+        });
+      });
+    }
+  
     const pillData = {
       medication: pillName,
       strength: pillStrength,
       frequency,
-      startDate,
-      endDate,
-      times: times.map((timeSlot) => ({
-        time: timeSlot.time.toLocaleTimeString(),
-        amount: timeSlot.capsules.toString(),
-      })),
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      times: times.map((timeSlot) => {
+        return {
+          time: timeSlot.time.toISOString().split('T')[1].substring(0, 5),
+          amount: timeSlot.capsules,
+        };
+      }),      
       selectedDays: frequency === "On specific days of the week" ? selectedDays : undefined,
     };
 
+    console.log("Pill Data to be submitted:", pillData);
+  
     try {
       await addAgendaItem(pillData, token);
       alert("Pill added successfully!");
       setModalVisible(false);
       router.push("/dashboard");
     } catch (error) {
-      console.error("Failed to add pill:", error);
+      console.error("Error occurred while adding pill:", error);
+      alert("An error occurred while adding the pill. Please try again.");
     }
   };
+  
 
   const handleCancel = (): void => {
     setModalVisible(false);
@@ -348,9 +365,6 @@ const FrequencyModal = ({ onFrequencyChange }: { onFrequencyChange: (newFrequenc
   );
 };
 
-
-
-
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
@@ -549,4 +563,3 @@ const styles = StyleSheet.create({
     color: "#292A2A",
   },
 });
-

@@ -11,6 +11,7 @@ interface Time {
 }
 
 interface Medication {
+  amount: string;
   medication: string;
   startDate: Date;
   endDate: Date;
@@ -48,11 +49,11 @@ export default function Dashboard() {
     const loadAgenda = async () => {
       try {
         const fetchedData = await fetchAgenda(user.id, token);
-        console.log('Fetched Data:', fetchedData); // Check the raw data from the API
+        console.log('Fetched Data:', fetchedData); 
         
-        const agendaItems: Medication[] = fetchedData.flatMap(entry => entry.items);
-        console.log('Agenda Items:', agendaItems); // Check the items, specifically the "times" array
-  
+        const agendaItems: Medication[] = fetchedData.flatMap((entry: { items: any; }) => entry.items);
+        console.log('Agenda Items:', agendaItems); 
+
         const agendaByDay: GroupedAgenda = groupAgendaByDay(agendaItems);
         setAgenda(agendaByDay);
       } catch (error) {
@@ -96,13 +97,31 @@ export default function Dashboard() {
 
   const renderMedications = () => {
     const meds = agenda[selectedDay] || [];
-    meds.forEach(m => console.log(m.times))
+    
     return meds.map((med, index) => (
       <View key={index} style={styles.reminderItem}>
-        <Text style={styles.timeText}>{med.time}</Text>
+        <Text style={styles.timeText}>
+          {med.times && med.times.length > 0 
+            ? med.times.map((timeObj) => timeObj.time).join(', ') 
+            : 'No time specified'}
+        </Text>
         <View style={[styles.medicationCard, { backgroundColor: '#E8F0FE' }]}>
           <Text style={styles.medicationName}>{med.medication}</Text>
-          <Text style={styles.medicationDetails}>{`${med.amount} - from ${new Date(med.startDate).toLocaleDateString()} to ${new Date(med.endDate).toLocaleDateString()}`}</Text>
+          <Text style={styles.medicationDetails}>
+          {med.times && med.times.length > 0
+            ? med.times.map((timeObj) => {
+                const amount = parseInt(timeObj.amount, 10);
+                if (amount === 1) {
+                  return '1 capsule ';
+                } else if (amount > 1) {
+                  return `${amount} capsules `;
+                } else {
+                  return 'No amount specified';
+                }
+              }).join(', ')
+            : 'No amount specified'} 
+          - from {new Date(med.startDate).toLocaleDateString()} to {new Date(med.endDate).toLocaleDateString()}
+          </Text>
         </View>
       </View>
     ));
