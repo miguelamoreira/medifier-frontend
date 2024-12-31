@@ -97,20 +97,6 @@ export default function Register() {
         <Text style={styles.signUpButtonText}>Sign Up</Text>
       </TouchableOpacity>
 
-      <Text style={styles.orText}>──────── Or sign up with ────────</Text>
-
-      <View style={styles.socialContainer}>
-        <TouchableOpacity style={styles.socialButton}>
-          <FontAwesome name="apple" size={24} color="black" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.socialButton}>
-          <FontAwesome name="google" size={24} color="black" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.socialButton}>
-          <FontAwesome name="facebook" size={24} color="black" />
-        </TouchableOpacity>
-      </View>
-
       <TouchableOpacity>
         <Text style={styles.signInText}>
           Already have an Account? <Text style={styles.signInLink} onPress={() => router.push('/login')}>Sign In</Text>
@@ -190,27 +176,6 @@ const styles = StyleSheet.create({
     color: '#FAFAFC',
     fontSize: 16,
     fontFamily: 'OpenSans_700Bold'
-  },
-  orText: {
-    color: '#ACADA9',
-    marginVertical: 20,
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  socialContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '60%',
-    marginBottom: 40,
-  },
-  socialButton: {
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 25,
-    width: 50,
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   signInText: {
     fontSize: 14,

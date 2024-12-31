@@ -36,7 +36,7 @@ export default function RootLayout() {
   return (
     <UserProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack initialRouteName="onboarding">
+        <Stack initialRouteName="onboarding" screenOptions={{ headerShown: false }}>
           {/* Screens */}
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ title: 'Login', headerShown: false }} />
@@ -46,7 +46,6 @@ export default function RootLayout() {
           <Stack.Screen name="newPill" options={{ title: 'NewPill', headerShown: false }} />
           <Stack.Screen name="userSettings" options={{ title: 'UserSettings', headerShown: false }} />
           <Stack.Screen name="notificationsSettings" options={{ title: 'NotificationsSettings', headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       </ThemeProvider>

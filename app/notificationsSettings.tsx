@@ -14,8 +14,8 @@ export default function NotificationsSettings() {
     smsNotifications: false,
   });
 
-  const toggleSwitch = (key) => {
-    setPreferences((prevState) => ({
+  const toggleSwitch = (key: any) => {
+    setPreferences((prevState: any) => ({
       ...prevState,
       [key]: !prevState[key],
     }));
@@ -146,34 +146,5 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 16,
     fontFamily: "OpenSans_600SemiBold",
-  },
-  navbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    backgroundColor: '#303030',
-    paddingVertical: 10,
-    borderRadius: 30,
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    shadowColor: '#303030',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  newPillButton: {
-    backgroundColor: '#839ADE',
-    borderRadius: 25,
-    paddingHorizontal: 25,
-    paddingVertical: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  newPillText: {
-    color: '#424443',
-    fontSize: 16,
-    marginLeft: 5,
   },
 });

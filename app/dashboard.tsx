@@ -11,6 +11,7 @@ interface Time {
 }
 
 interface Medication {
+  selectedDays: any;
   amount: string;
   medication: string;
   startDate: Date;
@@ -50,16 +51,20 @@ export default function Dashboard() {
       try {
         const fetchedData = await fetchAgenda(user.id, token);
         console.log('Fetched Data:', fetchedData); 
-        
-        const agendaItems: Medication[] = fetchedData.flatMap((entry: { items: any; }) => entry.items);
-        console.log('Agenda Items:', agendaItems); 
-
-        const agendaByDay: GroupedAgenda = groupAgendaByDay(agendaItems);
-        setAgenda(agendaByDay);
+         
+        if (Array.isArray(fetchedData)) {
+          const agendaItems = fetchedData.flatMap((entry) => entry.items);
+          console.log('Agenda Items:', agendaItems); 
+         
+          const agendaByDay = groupAgendaByDay(agendaItems);
+          setAgenda(agendaByDay);
+        } else {
+          console.error('Fetched data is not in the expected format');
+        }
       } catch (error) {
         console.error('Error loading agenda:', error);
       }
-    };
+    };    
   
     loadAgenda();
   }, [user, token]);
@@ -97,36 +102,58 @@ export default function Dashboard() {
 
   const renderMedications = () => {
     const meds = agenda[selectedDay] || [];
-    
-    return meds.map((med, index) => (
-      <View key={index} style={styles.reminderItem}>
-        <Text style={styles.timeText}>
-          {med.times && med.times.length > 0 
-            ? med.times.map((timeObj) => timeObj.time).join(', ') 
-            : 'No time specified'}
-        </Text>
-        <View style={[styles.medicationCard, { backgroundColor: '#E8F0FE' }]}>
-          <Text style={styles.medicationName}>{med.medication}</Text>
-          <Text style={styles.medicationDetails}>
-          {med.times && med.times.length > 0
-            ? med.times.map((timeObj) => {
-                const amount = parseInt(timeObj.amount, 10);
-                if (amount === 1) {
-                  return '1 capsule ';
-                } else if (amount > 1) {
-                  return `${amount} capsules `;
-                } else {
-                  return 'No amount specified';
-                }
-              }).join(', ')
-            : 'No amount specified'} 
-          - from {new Date(med.startDate).toLocaleDateString()} to {new Date(med.endDate).toLocaleDateString()}
+  
+    console.log(`Rendering medications for day ${selectedDay}:`, meds);
+  
+    const sortedMeds = meds.sort((a, b) => {
+      const getFirstTime = (med) => {
+        if (med.times && med.times.length > 0) {
+          return med.times[0].time;
+        }
+        return "24:00"; 
+      };
+      
+      return getFirstTime(a).localeCompare(getFirstTime(b));
+    });
+  
+    return sortedMeds.map((med, index) => {
+      const isValidForSelectedDay =
+        med.selectedDays.length === 0 || med.selectedDays.includes(selectedDay);
+  
+      if (!isValidForSelectedDay) {
+        return null;
+      }
+  
+      return (
+        <View key={index} style={styles.reminderItem}>
+          <Text style={styles.timeText}>
+            {med.times && med.times.length > 0 
+              ? med.times.map((timeObj) => timeObj.time).join(', ') 
+              : 'No time specified'}
           </Text>
+          <View style={[styles.medicationCard, { backgroundColor: '#E8F0FE' }]}>
+            <Text style={styles.medicationName}>{med.medication}</Text>
+            <Text style={styles.medicationDetails}>
+              {med.times && med.times.length > 0
+                ? med.times.map((timeObj) => {
+                    const amount = parseInt(timeObj.amount, 10);
+                    if (amount === 1) {
+                      return '1 capsule ';
+                    } else if (amount > 1) {
+                      return `${amount} capsules `;
+                    } else {
+                      return 'No amount specified';
+                    }
+                  }).join(', ')
+                : 'No amount specified'} 
+              - from {new Date(med.startDate).toLocaleDateString()} to {new Date(med.endDate).toLocaleDateString()}
+            </Text>
+          </View>
         </View>
-      </View>
-    ));
+      );
+    });
   };
-
+  
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>

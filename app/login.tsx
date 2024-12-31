@@ -58,28 +58,11 @@ export default function Login() {
           value={password}
           onChangeText={setPassword}
         />
-        <TouchableOpacity>
-          <Text style={styles.forgotPassword}>Forgot Password?</Text>
-        </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.signInButton} onPress={handleLogin}>
         <Text style={styles.signInButtonText}>Sign In</Text>
       </TouchableOpacity>
-
-      <Text style={styles.orText}>──────── Or sign in with ────────</Text>
-
-      <View style={styles.socialContainer}>
-        <TouchableOpacity style={styles.socialButton}>
-          <FontAwesome name="apple" size={24} color="black" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.socialButton}>
-          <FontAwesome name="google" size={24} color="black" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.socialButton}>
-          <FontAwesome name="facebook" size={24} color="black" />
-        </TouchableOpacity>
-      </View>
 
       <TouchableOpacity>
         <Text style={styles.signUpText}>
@@ -131,46 +114,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#292A2A',
   },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    color: '#839ADE',
-    fontSize: 12,
-    marginTop: 5,
-    fontFamily: 'OpenSans_600SemiBold'
-  },
   signInButton: {
     backgroundColor: '#839ADE',
     borderRadius: 25,
     paddingVertical: 12,
     alignItems: 'center',
     width: '100%',
-    marginTop: 10,
+    marginVertical: 10,
   },
   signInButtonText: {
     color: '#FAFAFC',
     fontSize: 16,
     fontFamily: 'OpenSans_700Bold'
-  },
-  orText: {
-    color: '#ACADA9',
-    marginVertical: 60,
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  socialContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '60%',
-    marginBottom: 40,
-  },
-  socialButton: {
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 25,
-    width: 50,
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   signUpText: {
     fontSize: 14,

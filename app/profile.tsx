@@ -54,14 +54,6 @@ export default function Profile() {
             </View>
             <Ionicons name="chevron-forward-outline" size={20} color="#999" />
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.option}>
-            <View style={styles.row}>
-              <Ionicons name="shield-checkmark-outline" size={20} style={styles.icon} />
-              <Text style={styles.optionText}>Login & Security</Text>
-            </View>
-            <Ionicons name="chevron-forward-outline" size={20} color="#999" />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
@@ -70,14 +62,6 @@ export default function Profile() {
             <View style={styles.row}>
               <Ionicons name="notifications-outline" size={20} style={styles.icon} />
               <Text style={styles.optionText}>Notification Settings</Text>
-            </View>
-            <Ionicons name="chevron-forward-outline" size={20} color="#999" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.option}>
-            <View style={styles.row}>
-              <Ionicons name="time-outline" size={20} style={styles.icon} />
-              <Text style={styles.optionText}>Reminder Customization</Text>
             </View>
             <Ionicons name="chevron-forward-outline" size={20} color="#999" />
           </TouchableOpacity>
@@ -178,34 +162,5 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 16,
     color: '#292A2A',
-  },
-  navbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    backgroundColor: '#303030',
-    paddingVertical: 10,
-    borderRadius: 30,
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    shadowColor: '#303030',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  newPillButton: {
-    backgroundColor: '#839ADE',
-    borderRadius: 25,
-    paddingHorizontal: 25,
-    paddingVertical: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  newPillText: {
-    color: '#424443',
-    fontSize: 16,
-    marginLeft: 5,
   },
 });
